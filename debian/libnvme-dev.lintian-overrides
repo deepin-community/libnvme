@@ -1,0 +1,2 @@
+# lintian false-positives
+libnvme-dev: bad-whatis-entry

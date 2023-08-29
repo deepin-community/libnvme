@@ -1,0 +1,26 @@
+Author: Martin Belanger <martin.belanger@dell.com>
+Description: tree: missing closedir() causes fd leak for "/sys/bus/pci/slots"
+ In nvme_ctrl_lookup_phy_slot(), we are missing a closedir(), which
+ causes file descriptors to leak. Also, there was a missing free()
+ when the function returns with ENOMEM.
+
+diff -Naurp libnvme.orig/src/nvme/tree.c libnvme/src/nvme/tree.c
+--- libnvme.orig/src/nvme/tree.c
++++ libnvme/src/nvme/tree.c
+@@ -1292,6 +1292,8 @@ static char *nvme_ctrl_lookup_phy_slot(n
+ 			ret = asprintf(&path, "/sys/bus/pci/slots/%s", entry->d_name);
+ 			if (ret < 0) {
+ 				errno = ENOMEM;
++				free(target_addr);
++				closedir(slots_dir);
+ 				return NULL;
+ 			}
+ 			addr = nvme_get_attr(path, "address");
+@@ -1306,6 +1308,7 @@ static char *nvme_ctrl_lookup_phy_slot(n
+ 		}
+ 	}
+ 	free(target_addr);
++	closedir(slots_dir);
+ 	if (found)
+ 		return strdup(entry->d_name);
+ 	return NULL;
