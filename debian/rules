@@ -1,4 +1,19 @@
 #!/usr/bin/make -f
 
+export KBUILD_BUILD_TIMESTAMP = "@$(SOURCE_DATE_EPOCH)"
+
 %:
-	dh $@
+	dh ${@} --buildsystem=meson --with python3
+
+override_dh_auto_configure:
+	dh_auto_configure -- -Ddocs=man -Ddocs-build=true -Dpython=enabled -Dopenssl=enabled --default-library=both
+
+execute_after_dh_auto_install:
+	# remove empty manpages
+	find debian/tmp/usr/share/man -type f -empty -exec rm -f {} +
+
+	# fix wrong-manual-section
+	sed -i -e 's| 9 | 2 |' debian/tmp/usr/share/man/*/*.2
+
+override_dh_auto_test:
+	# disabled
