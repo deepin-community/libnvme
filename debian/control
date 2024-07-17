@@ -27,7 +27,7 @@ Architecture: any
 Depends:
  libjson-c-dev,
  libkeyutils-dev,
- libnvme1t64 (= ${binary:Version}),
+ libnvme1 (= ${binary:Version}),
  libssl-dev,
  ${misc:Depends},
 Description: NVMe management library (development)
@@ -38,13 +38,7 @@ Description: NVMe management library (development)
  .
  This package contains the development files.
 
-Package: libnvme1t64
-Provides:
- ${t64:Provides},
-Replaces:
- libnvme1,
-Breaks:
- libnvme1 (<< ${source:Version}),
+Package: libnvme1
 Section: libs
 Architecture: any
 Depends:
@@ -64,7 +58,7 @@ Package: python3-libnvme
 Section: python
 Architecture: any
 Depends:
- libnvme1t64 (= ${binary:Version}),
+ libnvme1 (= ${binary:Version}),
  ${misc:Depends},
  ${python3:Depends},
  ${shlibs:Depends},
