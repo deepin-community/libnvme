@@ -8,12 +8,12 @@
 project(
     'libnvme', ['c'],
     meson_version: '>= 0.50.0',
-    version: '1.8',
+    version: '1.9',
     license: 'LGPL-2.1-or-later',
     default_options: [
         'c_std=gnu99',
         'warning_level=1',
-        'buildtype=debug',
+        'buildtype=debugoptimized',
         'prefix=/usr/local',
         'sysconfdir=etc',
         'wrap_mode=nofallback'
