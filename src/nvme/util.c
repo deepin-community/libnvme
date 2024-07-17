@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <malloc.h>
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -619,6 +620,7 @@ static const char * const libnvme_status[] = {
 	[ENVME_CONNECT_OPNOTSUPP] = "not supported",
 	[ENVME_CONNECT_CONNREFUSED] = "connection refused",
 	[ENVME_CONNECT_ADDRNOTAVAIL] = "cannot assign requested address",
+	[ENVME_CONNECT_IGNORED] = "connection ignored",
 };
 
 const char *nvme_errno_to_string(int status)
@@ -1134,4 +1136,18 @@ void *__nvme_alloc(size_t len)
 
 	memset(p, 0, _len);
 	return p;
+}
+
+void *__nvme_realloc(void *p, size_t len)
+{
+	size_t old_len = malloc_usable_size(p);
+
+	void *result = __nvme_alloc(len);
+
+	if (p) {
+		memcpy(result, p, min(old_len, len));
+		free(p);
+	}
+
+	return result;
 }

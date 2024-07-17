@@ -17,9 +17,12 @@
 #include "mi.h"
 
 
-char *nvme_ctrl_sysfs_dir(void);
-char *nvme_subsys_sysfs_dir(void);
-char *nvme_ns_sysfs_dir(void);
+const char *nvme_subsys_sysfs_dir(void);
+const char *nvme_ctrl_sysfs_dir(void);
+const char *nvme_ns_sysfs_dir(void);
+const char *nvme_slots_sysfs_dir(void);
+const char *nvme_uuid_ibm_filename(void);
+const char *nvme_dmi_entries_dir(void);
 
 struct nvme_path {
 	struct list_node entry;
@@ -83,6 +86,7 @@ struct nvme_ctrl {
 	char *dhchap_key;
 	char *dhchap_ctrl_key;
 	char *cntrltype;
+	char *cntlid;
 	char *dctype;
 	char *phy_slot;
 	bool discovery_ctrl;
@@ -185,6 +189,8 @@ nvme_ctrl_t __nvme_lookup_ctrl(nvme_subsystem_t s, const char *transport,
 
 void *__nvme_alloc(size_t len);
 
+void *__nvme_realloc(void *p, size_t len);
+
 #if (LOG_FUNCNAME == 1)
 #define __nvme_log_func __func__
 #else
@@ -285,5 +291,8 @@ struct __mi_mctp_socket_ops {
 	int (*ioctl_tag)(int, unsigned long, struct mctp_ioc_tag_ctl *);
 };
 void __nvme_mi_mctp_set_ops(const struct __mi_mctp_socket_ops *newops);
+
+#define SECTOR_SIZE	512
+#define SECTOR_SHIFT	9
 
 #endif /* _LIBNVME_PRIVATE_H */

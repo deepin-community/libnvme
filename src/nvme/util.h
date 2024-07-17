@@ -483,7 +483,7 @@ static inline void nvme_feature_decode_namespace_write_protect(__u32 value,
 
 static inline void nvme_id_ns_flbas_to_lbaf_inuse(__u8 flbas, __u8 *lbaf_inuse)
 {
-	*lbaf_inuse = ((NVME_FLBAS_HIGHER(flbas) >> 1) |
+	*lbaf_inuse = ((NVME_FLBAS_HIGHER(flbas) << 4) |
 			NVME_FLBAS_LOWER(flbas));
 }
 
@@ -557,6 +557,8 @@ char *kv_keymatch(const char *kv, const char *key);
  * the first character after the matched @prefix. NULL otherwise.
  */
 char *startswith(const char *s, const char *prefix);
+
+#define min(x, y) ((x) > (y) ? (y) : (x))
 
 #define __round_mask(val, mult) ((__typeof__(val))((mult)-1))
 

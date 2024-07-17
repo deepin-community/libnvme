@@ -24,8 +24,7 @@
 
 #include "ioctl.h"
 #include "util.h"
-
-static bool nvme_debug;
+#include "log.h"
 
 static int nvme_verify_chr(int fd)
 {
@@ -79,9 +78,10 @@ int nvme_get_nsid(int fd, __u32 *nsid)
 	return -1 * (errno != 0);
 }
 
-static int nvme_submit_passthru64(int fd, unsigned long ioctl_cmd,
-				  struct nvme_passthru_cmd64 *cmd,
-				  __u64 *result)
+__attribute__((weak))
+int nvme_submit_passthru64(int fd, unsigned long ioctl_cmd,
+			   struct nvme_passthru_cmd64 *cmd,
+			   __u64 *result)
 {
 	int err = ioctl(fd, ioctl_cmd, cmd);
 
@@ -90,62 +90,14 @@ static int nvme_submit_passthru64(int fd, unsigned long ioctl_cmd,
 	return err;
 }
 
-static void nvme_show_command(struct nvme_passthru_cmd *cmd, int err, struct timeval start,
-			      struct timeval end)
+__attribute__((weak))
+int nvme_submit_passthru(int fd, unsigned long ioctl_cmd,
+			 struct nvme_passthru_cmd *cmd, __u32 *result)
 {
-	printf("opcode       : %02x\n", cmd->opcode);
-	printf("flags        : %02x\n", cmd->flags);
-	printf("rsvd1        : %04x\n", cmd->rsvd1);
-	printf("nsid         : %08x\n", cmd->nsid);
-	printf("cdw2         : %08x\n", cmd->cdw2);
-	printf("cdw3         : %08x\n", cmd->cdw3);
-	printf("data_len     : %08x\n", cmd->data_len);
-	printf("metadata_len : %08x\n", cmd->metadata_len);
-	printf("addr         : %"PRIx64"\n", (uint64_t)(uintptr_t)cmd->addr);
-	printf("metadata     : %"PRIx64"\n", (uint64_t)(uintptr_t)cmd->metadata);
-	printf("cdw10        : %08x\n", cmd->cdw10);
-	printf("cdw11        : %08x\n", cmd->cdw11);
-	printf("cdw12        : %08x\n", cmd->cdw12);
-	printf("cdw13        : %08x\n", cmd->cdw13);
-	printf("cdw14        : %08x\n", cmd->cdw14);
-	printf("cdw15        : %08x\n", cmd->cdw15);
-	printf("timeout_ms   : %08x\n", cmd->timeout_ms);
-	printf("result       : %08x\n", cmd->result);
-	printf("err          : %d\n", err);
-	printf("latency      : %lu us\n",
-	       (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec));
-}
-
-void nvme_set_debug(bool debug)
-{
-	nvme_debug = debug;
-}
-
-bool nvme_get_debug(void)
-{
-	return nvme_debug;
-}
-
-static int nvme_submit_passthru(int fd, unsigned long ioctl_cmd,
-				struct nvme_passthru_cmd *cmd, __u32 *result)
-{
-	struct timeval start;
-	struct timeval end;
-	int err;
-
-	if (nvme_get_debug())
-		gettimeofday(&start, NULL);
-
-	err = ioctl(fd, ioctl_cmd, cmd);
-
-	if (nvme_get_debug()) {
-		gettimeofday(&end, NULL);
-		nvme_show_command(cmd, err, start, end);
-	}
+	int err = ioctl(fd, ioctl_cmd, cmd);
 
 	if (err >= 0 && result)
 		*result = cmd->result;
-
 	return err;
 }
 
@@ -245,125 +197,6 @@ int nvme_admin_passthru(int fd, __u8 opcode, __u8 flags, __u16 rsvd,
 			     cdw14, cdw15, data_len, data, metadata_len,
 			     metadata, timeout_ms, result);
 }
-
-enum nvme_cmd_dword_fields {
-	NVME_DEVICE_SELF_TEST_CDW10_STC_SHIFT			= 0,
-	NVME_DEVICE_SELF_TEST_CDW10_STC_MASK			= 0xf,
-	NVME_DIRECTIVE_CDW11_DOPER_SHIFT			= 0,
-	NVME_DIRECTIVE_CDW11_DTYPE_SHIFT			= 8,
-	NVME_DIRECTIVE_CDW11_DPSEC_SHIFT			= 16,
-	NVME_DIRECTIVE_CDW11_DOPER_MASK				= 0xff,
-	NVME_DIRECTIVE_CDW11_DTYPE_MASK				= 0xff,
-	NVME_DIRECTIVE_CDW11_DPSEC_MASK				= 0xffff,
-	NVME_DIRECTIVE_SEND_IDENTIFY_CDW12_ENDIR_SHIFT		= 0,
-	NVME_DIRECTIVE_SEND_IDENTIFY_CDW12_DTYPE_SHIFT		= 1,
-	NVME_DIRECTIVE_SEND_IDENTIFY_CDW12_ENDIR_MASK		= 0x1,
-	NVME_DIRECTIVE_SEND_IDENTIFY_CDW12_DTYPE_MASK		= 0x1,
-	NVME_FW_COMMIT_CDW10_FS_SHIFT				= 0,
-	NVME_FW_COMMIT_CDW10_CA_SHIFT				= 3,
-	NVME_FW_COMMIT_CDW10_BPID_SHIFT				= 31,
-	NVME_FW_COMMIT_CDW10_FS_MASK				= 0x7,
-	NVME_FW_COMMIT_CDW10_CA_MASK				= 0x7,
-	NVME_FW_COMMIT_CDW10_BPID_MASK				= 0x1,
-	NVME_GET_FEATURES_CDW10_SEL_SHIFT			= 8,
-	NVME_GET_FEATURES_CDW10_SEL_MASK			= 0x7,
-	NVME_SET_FEATURES_CDW10_SAVE_SHIFT			= 31,
-	NVME_SET_FEATURES_CDW10_SAVE_MASK			= 0x1,
-	NVME_FEATURES_CDW10_FID_SHIFT				= 0,
-	NVME_FEATURES_CDW14_UUID_SHIFT				= 0,
-	NVME_FEATURES_CDW10_FID_MASK				= 0xff,
-	NVME_FEATURES_CDW14_UUID_MASK				= 0x7f,
-	NVME_LOG_CDW10_LID_SHIFT				= 0,
-	NVME_LOG_CDW10_LSP_SHIFT				= 8,
-	NVME_LOG_CDW10_RAE_SHIFT				= 15,
-	NVME_LOG_CDW10_NUMDL_SHIFT				= 16,
-	NVME_LOG_CDW11_NUMDU_SHIFT				= 0,
-	NVME_LOG_CDW11_LSI_SHIFT				= 16,
-	NVME_LOG_CDW14_UUID_SHIFT				= 0,
-	NVME_LOG_CDW14_CSI_SHIFT				= 24,
-	NVME_LOG_CDW14_OT_SHIFT					= 23,
-	NVME_LOG_CDW10_LID_MASK					= 0xff,
-	NVME_LOG_CDW10_LSP_MASK					= 0x7f,
-	NVME_LOG_CDW10_RAE_MASK					= 0x1,
-	NVME_LOG_CDW10_NUMDL_MASK				= 0xffff,
-	NVME_LOG_CDW11_NUMDU_MASK				= 0xffff,
-	NVME_LOG_CDW11_LSI_MASK					= 0xffff,
-	NVME_LOG_CDW14_UUID_MASK				= 0x7f,
-	NVME_LOG_CDW14_CSI_MASK					= 0xff,
-	NVME_LOG_CDW14_OT_MASK					= 0x1,
-	NVME_IDENTIFY_CDW10_CNS_SHIFT				= 0,
-	NVME_IDENTIFY_CDW10_CNTID_SHIFT				= 16,
-	NVME_IDENTIFY_CDW11_CNSSPECID_SHIFT			= 0,
-	NVME_IDENTIFY_CDW14_UUID_SHIFT				= 0,
-	NVME_IDENTIFY_CDW11_CSI_SHIFT				= 24,
-	NVME_IDENTIFY_CDW10_CNS_MASK				= 0xff,
-	NVME_IDENTIFY_CDW10_CNTID_MASK				= 0xffff,
-	NVME_IDENTIFY_CDW11_CNSSPECID_MASK			= 0xffff,
-	NVME_IDENTIFY_CDW14_UUID_MASK				= 0x7f,
-	NVME_IDENTIFY_CDW11_CSI_MASK				= 0xff,
-	NVME_NAMESPACE_ATTACH_CDW10_SEL_SHIFT			= 0,
-	NVME_NAMESPACE_ATTACH_CDW10_SEL_MASK			= 0xf,
-	NVME_NAMESPACE_MGMT_CDW10_SEL_SHIFT			= 0,
-	NVME_NAMESPACE_MGMT_CDW10_SEL_MASK			= 0xf,
-	NVME_NAMESPACE_MGMT_CDW11_CSI_SHIFT			= 24,
-	NVME_NAMESPACE_MGMT_CDW11_CSI_MASK			= 0xff,
-	NVME_VIRT_MGMT_CDW10_ACT_SHIFT				= 0,
-	NVME_VIRT_MGMT_CDW10_RT_SHIFT				= 8,
-	NVME_VIRT_MGMT_CDW10_CNTLID_SHIFT			= 16,
-	NVME_VIRT_MGMT_CDW11_NR_SHIFT				= 0,
-	NVME_VIRT_MGMT_CDW10_ACT_MASK				= 0xf,
-	NVME_VIRT_MGMT_CDW10_RT_MASK				= 0x7,
-	NVME_VIRT_MGMT_CDW10_CNTLID_MASK			= 0xffff,
-	NVME_VIRT_MGMT_CDW11_NR_MASK				= 0xffff,
-	NVME_FORMAT_CDW10_LBAF_SHIFT				= 0,
-	NVME_FORMAT_CDW10_MSET_SHIFT				= 4,
-	NVME_FORMAT_CDW10_PI_SHIFT				= 5,
-	NVME_FORMAT_CDW10_PIL_SHIFT				= 8,
-	NVME_FORMAT_CDW10_SES_SHIFT				= 9,
-	NVME_FORMAT_CDW10_LBAFU_SHIFT				= 12,
-	NVME_FORMAT_CDW10_LBAF_MASK				= 0xf,
-	NVME_FORMAT_CDW10_MSET_MASK				= 0x1,
-	NVME_FORMAT_CDW10_PI_MASK				= 0x7,
-	NVME_FORMAT_CDW10_PIL_MASK				= 0x1,
-	NVME_FORMAT_CDW10_SES_MASK				= 0x7,
-	NVME_FORMAT_CDW10_LBAFU_MASK				= 0x3,
-	NVME_SANITIZE_CDW10_SANACT_SHIFT			= 0,
-	NVME_SANITIZE_CDW10_AUSE_SHIFT				= 3,
-	NVME_SANITIZE_CDW10_OWPASS_SHIFT			= 4,
-	NVME_SANITIZE_CDW10_OIPBP_SHIFT				= 8,
-	NVME_SANITIZE_CDW10_NODAS_SHIFT				= 9,
-	NVME_SANITIZE_CDW10_SANACT_MASK				= 0x7,
-	NVME_SANITIZE_CDW10_AUSE_MASK				= 0x1,
-	NVME_SANITIZE_CDW10_OWPASS_MASK				= 0xf,
-	NVME_SANITIZE_CDW10_OIPBP_MASK				= 0x1,
-	NVME_SANITIZE_CDW10_NODAS_MASK				= 0x1,
-	NVME_SECURITY_NSSF_SHIFT				= 0,
-	NVME_SECURITY_SPSP0_SHIFT				= 8,
-	NVME_SECURITY_SPSP1_SHIFT				= 16,
-	NVME_SECURITY_SECP_SHIFT				= 24,
-	NVME_SECURITY_NSSF_MASK					= 0xff,
-	NVME_SECURITY_SPSP0_MASK				= 0xff,
-	NVME_SECURITY_SPSP1_MASK				= 0xff,
-	NVME_SECURITY_SECP_MASK					= 0xffff,
-	NVME_GET_LBA_STATUS_CDW13_RL_SHIFT			= 0,
-	NVME_GET_LBA_STATUS_CDW13_ATYPE_SHIFT			= 24,
-	NVME_GET_LBA_STATUS_CDW13_RL_MASK			= 0xffff,
-	NVME_GET_LBA_STATUS_CDW13_ATYPE_MASK			= 0xff,
-	NVME_ZNS_MGMT_SEND_ZSASO_SHIFT				= 9,
-	NVME_ZNS_MGMT_SEND_ZSASO_MASK				= 0x1,
-	NVME_ZNS_MGMT_SEND_SEL_SHIFT				= 8,
-	NVME_ZNS_MGMT_SEND_SEL_MASK				= 0x1,
-	NVME_ZNS_MGMT_SEND_ZSA_SHIFT				= 0,
-	NVME_ZNS_MGMT_SEND_ZSA_MASK				= 0xff,
-	NVME_ZNS_MGMT_RECV_ZRA_SHIFT				= 0,
-	NVME_ZNS_MGMT_RECV_ZRA_MASK				= 0xff,
-	NVME_ZNS_MGMT_RECV_ZRASF_SHIFT				= 8,
-	NVME_ZNS_MGMT_RECV_ZRASF_MASK				= 0xff,
-	NVME_ZNS_MGMT_RECV_ZRAS_FEAT_SHIFT			= 16,
-	NVME_ZNS_MGMT_RECV_ZRAS_FEAT_MASK			= 0x1,
-	NVME_DIM_TAS_SHIFT					= 0,
-	NVME_DIM_TAS_MASK					= 0xF,
-};
 
 enum features {
 	NVME_FEATURES_ARBITRATION_BURST_SHIFT			= 0,

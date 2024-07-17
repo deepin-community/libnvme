@@ -1,8 +1,27 @@
-libnvme (1.8-2deepin1) sid; urgency=medium
+libnvme (1.9-1) sid; urgency=medium
 
-  * No source change upload against python 3.12.
+  * Uploading to sid.
+  * Merging upstream version 1.9.
+  * Updating to standards-version 4.7.0.
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 08 Jul 2024 09:51:25 +0200
+ -- Daniel Baumann <daniel.baumann@progress-linux.org>  Sun, 05 May 2024 13:05:55 +0200
+
+libnvme (1.8-3) sid; urgency=medium
+
+  * Uploading to sid.
+  * Adding changelog for libnvme 1.6-1.
+  * Adding changelog for libnvme 1.7.1-1.1~exp1.
+  * Bumping build-depends on debhelper for t64 transition.
+  * Wrap and sorting debian files.
+
+ -- Daniel Baumann <daniel.baumann@progress-linux.org>  Mon, 04 Mar 2024 07:16:32 +0100
+
+libnvme (1.8-2.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Rename libraries for 64-bit time_t transition.  Closes: #1063131
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 01 Mar 2024 12:23:21 +0000
 
 libnvme (1.8-2) sid; urgency=medium
 
@@ -19,6 +38,13 @@ libnvme (1.8-1) sid; urgency=medium
 
  -- Daniel Baumann <daniel.baumann@progress-linux.org>  Mon, 19 Feb 2024 11:38:46 +0100
 
+libnvme (1.7.1-1.1~exp1) experimental; urgency=medium
+
+  * Non-maintainer upload.
+  * Rename libraries for 64-bit time_t transition.
+
+ -- Steve Langasek <vorlon@debian.org>  Mon, 05 Feb 2024 07:59:24 +0000
+
 libnvme (1.7.1-1) sid; urgency=medium
 
   * Uploading to sid.
@@ -27,6 +53,14 @@ libnvme (1.7.1-1) sid; urgency=medium
   * Removing pci-slots-fd-leak.patch, included upstream.
 
  -- Daniel Baumann <daniel.baumann@progress-linux.org>  Sun, 24 Dec 2023 08:51:57 +0100
+
+libnvme (1.6-1) sid; urgency=medium
+
+  * Uploading to sid.
+  * Merging upstream version 1.6.
+  * Removing cherry-picked pci-slots-fd-leak.patch, included upstream.
+
+ -- Daniel Baumann <daniel.baumann@progress-linux.org>  Wed, 04 Oct 2023 14:42:03 +0200
 
 libnvme (1.5-3) sid; urgency=medium
 
